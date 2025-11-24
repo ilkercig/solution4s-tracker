@@ -124,23 +124,28 @@ const languages = {
 };
 
 const getDefaultLanguage = () => {
-  const browserLanguages = window.navigator.languages ? window.navigator.languages.slice() : [];
-  const browserLanguage = window.navigator.userLanguage || window.navigator.language;
-  browserLanguages.push(browserLanguage);
-  browserLanguages.push(browserLanguage.substring(0, 2));
-
-  for (let i = 0; i < browserLanguages.length; i += 1) {
-    let language = browserLanguages[i].replace('-', '_');
-    if (language in languages) {
-      return language;
-    }
-    if (language.length > 2) {
-      language = language.substring(0, 2);
-      if (language in languages) {
-        return language;
-      }
-    }
-  }
+  // Temporarily disabled: Browser language detection
+  // To revert: uncomment the code below and remove the return 'tr' line
+  
+  // const browserLanguages = window.navigator.languages ? window.navigator.languages.slice() : [];
+  // const browserLanguage = window.navigator.userLanguage || window.navigator.language;
+  // browserLanguages.push(browserLanguage);
+  // browserLanguages.push(browserLanguage.substring(0, 2));
+  //
+  // for (let i = 0; i < browserLanguages.length; i += 1) {
+  //   let language = browserLanguages[i].replace('-', '_');
+  //   if (language in languages) {
+  //     return language;
+  //   }
+  //   if (language.length > 2) {
+  //     language = language.substring(0, 2);
+  //     if (language in languages) {
+  //       return language;
+  //     }
+  //   }
+  // }
+  
+  // Always return Turkish as the default language
   return 'tr';
 };
 
@@ -151,6 +156,8 @@ const LocalizationContext = createContext({
 });
 
 export const LocalizationProvider = ({ children }) => {
+  // Keep for reverting: server/user language preference detection
+  // eslint-disable-next-line no-unused-vars
   const remoteLanguage = useSelector((state) => {
     const serverLanguage = state.session.server?.attributes?.language;
     const userLanguage = state.session.user?.attributes?.language;
@@ -158,9 +165,12 @@ export const LocalizationProvider = ({ children }) => {
     return (targetLanguage && targetLanguage in languages) ? targetLanguage : null;
   });
 
+  // eslint-disable-next-line no-unused-vars
   const [localLanguage, setLocalLanguage] = usePersistedState('language', getDefaultLanguage());
 
-  const language = remoteLanguage || localLanguage;
+  // Force Turkish language always
+  // To revert: replace the line below with: const language = remoteLanguage || localLanguage;
+  const language = 'tr'; // remoteLanguage || localLanguage;
 
   const direction = /^(ar|he|fa)$/.test(language) ? 'rtl' : 'ltr';
 
