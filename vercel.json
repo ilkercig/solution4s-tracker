@@ -1,14 +1,9 @@
 {
-    "buildCommand": "npm run build",
-    "outputDirectory": "build",
-    "rewrites": [
-      {
-        "source": "/api/socket",
-        "destination": "wss://xxzwadnmh.traccar.com/api/socket"
-      },
-      {
-        "source": "/api/:path*",
-        "destination": "https://xxzwadnmh.traccar.com/api/:path*"
-      }
-    ]
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://xxzwadnmh.traccar.com"
+    }
   }
+}
