@@ -141,12 +141,12 @@ const getDefaultLanguage = () => {
       }
     }
   }
-  return 'en';
+  return 'tr';
 };
 
 const LocalizationContext = createContext({
   languages,
-  language: 'en',
+  language: 'tr',
   setLocalLanguage: () => {},
 });
 

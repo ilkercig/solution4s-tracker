@@ -141,38 +141,6 @@ const LoginPage = () => {
 
   return (
     <LoginLayout>
-      <div className={classes.options}>
-        {nativeEnvironment && changeEnabled && (
-          <IconButton color="primary" onClick={() => navigate('/change-server')}>
-            <Tooltip
-              title={`${t('settingsServer')}: ${window.location.hostname}`}
-              open={showServerTooltip}
-              arrow
-            >
-              <VpnLockIcon />
-            </Tooltip>
-          </IconButton>
-        )}
-        {!nativeEnvironment && (
-          <IconButton color="primary" onClick={() => setShowQr(true)}>
-            <QrCode2Icon />
-          </IconButton>
-        )}
-        {languageEnabled && (
-          <FormControl>
-            <Select value={language} onChange={(e) => setLocalLanguage(e.target.value)}>
-              {languageList.map((it) => (
-                <MenuItem key={it.code} value={it.code}>
-                  <Box component="span" sx={{ mr: 1 }}>
-                    <ReactCountryFlag countryCode={it.country} svg />
-                  </Box>
-                  {it.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
-      </div>
       <div className={classes.container}>
         {useMediaQuery(theme.breakpoints.down('lg')) && <LogoImage color={theme.palette.primary.main} />}
         {!openIdForced && (
