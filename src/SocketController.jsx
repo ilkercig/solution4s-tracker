@@ -13,7 +13,6 @@ import useFeatures from './common/util/useFeatures';
 import { useAttributePreference } from './common/util/preferences';
 import { handleNativeNotificationListeners, nativePostMessage } from './common/components/NativeInterface';
 import fetchOrThrow from './common/util/fetchOrThrow';
-import { getWebSocketUrl, getApiUrl } from './config';
 
 const logoutCode = 4000;
 
@@ -49,7 +48,8 @@ const SocketController = () => {
   }, [features, dispatch, soundEvents, soundAlarms]);
 
   const connectSocket = () => {
-    const socket = new WebSocket(getWebSocketUrl('/api/socket'));
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const socket = new WebSocket(`${protocol}//${window.location.host}/api/socket`);
     socketRef.current = socket;
 
     socket.onopen = () => {
@@ -60,11 +60,11 @@ const SocketController = () => {
       dispatch(sessionActions.updateSocket(false));
       if (event.code !== logoutCode) {
         try {
-          const devicesResponse = await fetch(getApiUrl('/api/devices'), { credentials: 'include' });
+          const devicesResponse = await fetch('/api/devices');
           if (devicesResponse.ok) {
             dispatch(devicesActions.update(await devicesResponse.json()));
           }
-          const positionsResponse = await fetch(getApiUrl('/api/positions'), { credentials: 'include' });
+          const positionsResponse = await fetch('/api/positions');
           if (positionsResponse.ok) {
             dispatch(sessionActions.updatePositions(await positionsResponse.json()));
           }
@@ -101,7 +101,7 @@ const SocketController = () => {
 
   useEffectAsync(async () => {
     if (authenticated) {
-      const response = await fetchOrThrow(getApiUrl('/api/devices'), { credentials: 'include' });
+      const response = await fetchOrThrow('/api/devices');
       dispatch(devicesActions.refresh(await response.json()));
       nativePostMessage('authenticated');
       connectSocket();

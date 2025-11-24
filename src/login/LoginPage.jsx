@@ -23,7 +23,6 @@ import LogoImage from './LogoImage';
 import { useCatch } from '../reactHelper';
 import QrCodeDialog from '../common/components/QrCodeDialog';
 import fetchOrThrow from '../common/util/fetchOrThrow';
-import { getApiUrl } from '../config';
 
 const useStyles = makeStyles()((theme) => ({
   options: {
@@ -92,9 +91,8 @@ const LoginPage = () => {
     setFailed(false);
     try {
       const query = `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-      const response = await fetch(getApiUrl('/api/session'), {
+      const response = await fetch('/api/session', {
         method: 'POST',
-        credentials: 'include',
         body: new URLSearchParams(code.length ? `${query}&code=${code}` : query),
       });
       if (response.ok) {
@@ -123,7 +121,7 @@ const LoginPage = () => {
   });
 
   const handleOpenIdLogin = () => {
-    document.location = getApiUrl('/api/session/openid/auth');
+    document.location = '/api/session/openid/auth';
   };
 
   useEffect(() => nativePostMessage('authentication'), []);
