@@ -11,6 +11,7 @@ import UpdateController from './UpdateController';
 import TermsDialog from './common/components/TermsDialog';
 import Loader from './common/components/Loader';
 import fetchOrThrow from './common/util/fetchOrThrow';
+import apiFetch from './common/util/apiFetch';
 
 const useStyles = makeStyles()(() => ({
   page: {
@@ -49,7 +50,7 @@ const App = () => {
 
   useEffectAsync(async () => {
     if (!user) {
-      const response = await fetch('/api/session');
+      const response = await apiFetch('/api/session');
       if (response.ok) {
         dispatch(sessionActions.updateUser(await response.json()));
       } else {

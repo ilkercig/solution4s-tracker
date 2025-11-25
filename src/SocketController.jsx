@@ -13,6 +13,7 @@ import useFeatures from './common/util/useFeatures';
 import { useAttributePreference } from './common/util/preferences';
 import { handleNativeNotificationListeners, nativePostMessage } from './common/components/NativeInterface';
 import fetchOrThrow from './common/util/fetchOrThrow';
+import apiFetch from './common/util/apiFetch';
 import { getSocketUrl } from './common/util/url';
 
 const logoutCode = 4000;
@@ -110,11 +111,11 @@ const SocketController = () => {
       dispatch(sessionActions.updateSocket(false));
       if (event.code !== logoutCode) {
         try {
-          const devicesResponse = await fetch('/api/devices');
+          const devicesResponse = await apiFetch('/api/devices');
           if (devicesResponse.ok) {
             dispatch(devicesActions.update(await devicesResponse.json()));
           }
-          const positionsResponse = await fetch('/api/positions');
+          const positionsResponse = await apiFetch('/api/positions');
           if (positionsResponse.ok) {
             dispatch(sessionActions.updatePositions(await positionsResponse.json()));
           }
@@ -205,7 +206,7 @@ const SocketController = () => {
   const handleNativeNotification = useCatchCallback(async (message) => {
     const eventId = message.data.eventId;
     if (eventId) {
-      const response = await fetch(`/api/events/${eventId}`);
+      const response = await apiFetch(`/api/events/${eventId}`);
       if (response.ok) {
         const event = await response.json();
         const eventWithMessage = {

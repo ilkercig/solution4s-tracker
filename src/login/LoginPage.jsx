@@ -23,6 +23,7 @@ import LogoImage from './LogoImage';
 import { useCatch } from '../reactHelper';
 import QrCodeDialog from '../common/components/QrCodeDialog';
 import fetchOrThrow from '../common/util/fetchOrThrow';
+import apiFetch from '../common/util/apiFetch';
 
 const useStyles = makeStyles()((theme) => ({
   options: {
@@ -92,7 +93,7 @@ const LoginPage = () => {
     try {
       console.log('🔐 Login attempt to:', '/api/session');
       const query = `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-      const response = await fetch('/api/session', {
+      const response = await apiFetch('/api/session', {
         method: 'POST',
         body: new URLSearchParams(code.length ? `${query}&code=${code}` : query),
       });

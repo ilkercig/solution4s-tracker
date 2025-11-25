@@ -15,6 +15,7 @@ import { sessionActions } from '../../store';
 import { useTranslation } from './LocalizationProvider';
 import { useRestriction } from '../util/permissions';
 import { nativePostMessage } from './NativeInterface';
+import apiFetch from '../util/apiFetch';
 
 const BottomMenu = () => {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ const BottomMenu = () => {
             notificationTokens: tokens.length > 1 ? tokens.filter((it) => it !== notificationToken).join(',') : undefined,
           },
         };
-        await fetch(`/api/users/${user.id}`, {
+        await apiFetch(`/api/users/${user.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedUser),
@@ -71,7 +72,7 @@ const BottomMenu = () => {
       }
     }
 
-    await fetch('/api/session', { method: 'DELETE' });
+    await apiFetch('/api/session', { method: 'DELETE' });
     nativePostMessage('logout');
     navigate('/login');
     dispatch(sessionActions.updateUser(null));
