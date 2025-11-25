@@ -23,5 +23,11 @@ export default async (endpoint, init) => {
     url = getServerUrl() + endpoint;
   }
   
-  return fetch(url, init);
+  // Always include credentials for cookie handling (can be overridden)
+  const options = {
+    credentials: 'include',
+    ...init,
+  };
+  
+  return fetch(url, options);
 };

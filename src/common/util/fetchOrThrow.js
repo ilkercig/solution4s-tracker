@@ -17,7 +17,13 @@ export default async (input, init) => {
     url = getServerUrl() + input;
   }
   
-  const response = await fetch(url, init);
+  // Always include credentials for cookie handling (can be overridden)
+  const options = {
+    credentials: 'include',
+    ...init,
+  };
+  
+  const response = await fetch(url, options);
   if (!response.ok) {
     throw new Error(await response.text());
   }
