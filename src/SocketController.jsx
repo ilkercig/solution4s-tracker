@@ -54,18 +54,59 @@ const SocketController = () => {
 
   const connectSocket = () => {
     const socketUrl = getSocketUrl();
-    console.log('🔌 Attempting WebSocket connection to:', socketUrl);
+    
+    // Log connection attempt with detailed info
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🔌 WebSocket Connection Attempt');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📍 Environment:', import.meta.env.DEV ? 'Development' : 'Production');
+    console.log('🌐 Target URL:', socketUrl);
+    console.log('🏠 Current Origin:', window.location.origin);
+    console.log('🔐 Same Origin:', socketUrl.includes(window.location.host) ? 'YES (cookies will be sent)' : 'NO (cookies may not be sent)');
+    console.log('🍪 Cookies available:', document.cookie || '(no cookies accessible via JS - may be HttpOnly)');
+    console.log('👤 Authenticated User:', authenticated ? 'YES' : 'NO');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
     const socket = new WebSocket(socketUrl);
     socketRef.current = socket;
 
     socket.onopen = () => {
-      console.log('✅ WebSocket connected successfully to:', socketUrl);
+      console.log('✅ WebSocket CONNECTED successfully!');
+      console.log('   └─ URL:', socketUrl);
+      console.log('   └─ ReadyState:', socket.readyState, '(OPEN)');
+      console.log('   └─ Protocol:', socket.protocol || '(none)');
+      console.log('   └─ Extensions:', socket.extensions || '(none)');
       dispatch(sessionActions.updateSocket(true));
     };
 
     socket.onclose = async (event) => {
-      console.log(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason || 'No reason provided'}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔌 WebSocket CLOSED');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📊 Close Code:', event.code);
+      console.log('📝 Close Reason:', event.reason || '(no reason provided)');
+      console.log('🧹 Was Clean:', event.wasClean ? 'YES' : 'NO');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // Common WebSocket close codes explanation
+      const closeCodeExplanations = {
+        1000: 'Normal closure',
+        1001: 'Going away (e.g., browser navigating away)',
+        1002: 'Protocol error',
+        1003: 'Unsupported data type',
+        1006: 'Abnormal closure (no close frame, connection lost)',
+        1007: 'Invalid frame payload data',
+        1008: 'Policy violation',
+        1009: 'Message too big',
+        1011: 'Server error',
+        1015: 'TLS handshake failure',
+        4000: 'Logout (app-specific)',
+      };
+      
+      if (closeCodeExplanations[event.code]) {
+        console.log('💡 Explanation:', closeCodeExplanations[event.code]);
+      }
+      
       dispatch(sessionActions.updateSocket(false));
       if (event.code !== logoutCode) {
         try {
@@ -89,7 +130,23 @@ const SocketController = () => {
     };
 
     socket.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('❌ WebSocket ERROR');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('Error event:', error);
+      console.log('📊 ReadyState:', socket.readyState);
+      const states = ['CONNECTING (0)', 'OPEN (1)', 'CLOSING (2)', 'CLOSED (3)'];
+      console.log('   └─ State:', states[socket.readyState] || socket.readyState);
+      console.log('🌐 URL attempted:', socketUrl);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      console.log('🔍 Common causes:');
+      console.log('   1. Server not accepting WebSocket connections');
+      console.log('   2. Authentication/session cookie not being sent');
+      console.log('   3. CORS policy blocking the connection');
+      console.log('   4. Server requires authentication but none provided');
+      console.log('   5. Network/firewall blocking WebSocket connections');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     };
 
     socket.onmessage = (event) => {
@@ -115,12 +172,30 @@ const SocketController = () => {
 
   useEffectAsync(async () => {
     if (authenticated) {
-      console.log('🔐 User authenticated, initializing WebSocket connection...');
-      const response = await fetchOrThrow('/api/devices');
-      dispatch(devicesActions.refresh(await response.json()));
-      nativePostMessage('authenticated');
-      connectSocket();
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔐 User authenticated, initializing...');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      try {
+        console.log('📡 Fetching initial device data from /api/devices...');
+        const response = await fetchOrThrow('/api/devices');
+        const devices = await response.json();
+        console.log('✅ Device data received:', devices.length, 'devices');
+        dispatch(devicesActions.refresh(devices));
+        
+        console.log('');
+        console.log('🔌 Now initiating WebSocket connection...');
+        nativePostMessage('authenticated');
+        connectSocket();
+      } catch (error) {
+        console.error('❌ Failed to fetch initial data:', error);
+        console.log('⚠️  WebSocket connection may still be attempted...');
+        connectSocket();
+      }
+      
       return () => {
+        console.log('🔌 Closing WebSocket connection (logout)...');
         socketRef.current?.close(logoutCode);
       };
     }

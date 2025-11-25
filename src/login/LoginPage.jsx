@@ -90,6 +90,7 @@ const LoginPage = () => {
     event.preventDefault();
     setFailed(false);
     try {
+      console.log('🔐 Login attempt to:', '/api/session');
       const query = `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
       const response = await fetch('/api/session', {
         method: 'POST',
@@ -97,6 +98,11 @@ const LoginPage = () => {
       });
       if (response.ok) {
         const user = await response.json();
+        console.log('✅ Login successful!');
+        console.log('   └─ User:', user.email);
+        console.log('   └─ User ID:', user.id);
+        console.log('   └─ Session cookie should be set by server');
+        console.log('   └─ Cookies after login:', document.cookie || '(HttpOnly cookies not accessible)');
         generateLoginToken();
         dispatch(sessionActions.updateUser(user));
         const target = window.sessionStorage.getItem('postLogin') || '/';
@@ -107,7 +113,8 @@ const LoginPage = () => {
       } else {
         throw Error(await response.text());
       }
-    } catch {
+    } catch (error) {
+      console.error('❌ Login failed:', error);
       setFailed(true);
       setPassword('');
     }
