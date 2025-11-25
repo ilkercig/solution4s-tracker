@@ -4,23 +4,30 @@ import svgr from 'vite-plugin-svgr';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-export default defineConfig(() => ({
-  server: {
-    port: 3000,
-    proxy: {
-      '/api/socket': {
-        target: 'wss://xxzwadnmh.traccar.com',
-        changeOrigin: true,
-        secure: true,
-        ws: true,
-      },
-      '/api': {
-        target: 'https://xxzwadnmh.traccar.com',
-        changeOrigin: true,
-        secure: true,
+export default defineConfig(() => {
+  // Hardcoded for development proxy only
+  // Production uses VITE_TRACCAR_SERVER_DOMAIN from runtime env
+  const traccarDomain = 'xxzwadnmh.traccar.com';
+  const traccarHttpUrl = `https://${traccarDomain}`;
+  const traccarWsUrl = `wss://${traccarDomain}`;
+  
+  return {
+    server: {
+      port: 3000,
+      proxy: {
+        '/api/socket': {
+          target: traccarWsUrl,
+          changeOrigin: true,
+          secure: true,
+          ws: true,
+        },
+        '/api': {
+          target: traccarHttpUrl,
+          changeOrigin: true,
+          secure: true,
+        },
       },
     },
-  },
   build: {
     outDir: 'build',
   },
@@ -64,4 +71,5 @@ export default defineConfig(() => ({
       ],
     }),
   ],
-}));
+};
+});

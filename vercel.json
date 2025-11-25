@@ -3,10 +3,6 @@
     "outputDirectory": "build",
     "rewrites": [
       {
-        "source": "/api/socket",
-        "destination": "wss://xxzwadnmh.traccar.com/api/socket"
-      },
-      {
         "source": "/api/:path*",
         "destination": "https://xxzwadnmh.traccar.com/api/:path*"
       }

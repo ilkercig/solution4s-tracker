@@ -13,6 +13,7 @@ import useFeatures from './common/util/useFeatures';
 import { useAttributePreference } from './common/util/preferences';
 import { handleNativeNotificationListeners, nativePostMessage } from './common/components/NativeInterface';
 import fetchOrThrow from './common/util/fetchOrThrow';
+import { getSocketUrl } from './common/util/url';
 
 const logoutCode = 4000;
 
@@ -22,6 +23,10 @@ const SocketController = () => {
 
   const authenticated = useSelector((state) => Boolean(state.session.user));
   const includeLogs = useSelector((state) => state.session.includeLogs);
+
+  useEffect(() => {
+    console.log('📡 SocketController mounted. Authenticated:', authenticated);
+  }, []);
 
   const socketRef = useRef();
 
@@ -48,15 +53,19 @@ const SocketController = () => {
   }, [features, dispatch, soundEvents, soundAlarms]);
 
   const connectSocket = () => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${protocol}//${window.location.host}/api/socket`);
+    const socketUrl = getSocketUrl();
+    console.log('🔌 Attempting WebSocket connection to:', socketUrl);
+    console.log('📍 Environment:', import.meta.env.DEV ? 'Development' : 'Production');
+    const socket = new WebSocket(socketUrl);
     socketRef.current = socket;
 
     socket.onopen = () => {
+      console.log('✅ WebSocket connected successfully to:', socketUrl);
       dispatch(sessionActions.updateSocket(true));
     };
 
     socket.onclose = async (event) => {
+      console.log(`WebSocket closed. Code: ${event.code}, Reason: ${event.reason || 'No reason provided'}`);
       dispatch(sessionActions.updateSocket(false));
       if (event.code !== logoutCode) {
         try {
@@ -74,8 +83,13 @@ const SocketController = () => {
         } catch {
           // ignore errors
         }
+        console.log('WebSocket will reconnect in 60 seconds...');
         setTimeout(connectSocket, 60000);
       }
+    };
+
+    socket.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
     };
 
     socket.onmessage = (event) => {
@@ -101,6 +115,7 @@ const SocketController = () => {
 
   useEffectAsync(async () => {
     if (authenticated) {
+      console.log('🔐 User authenticated, initializing WebSocket connection...');
       const response = await fetchOrThrow('/api/devices');
       dispatch(devicesActions.refresh(await response.json()));
       nativePostMessage('authenticated');
