@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffectAsync } from './reactHelper';
 import { sessionActions } from './store';
 import Loader from './common/components/Loader';
+import apiFetch from './common/util/apiFetch';
 
 const ServerProvider = ({
   children,
@@ -17,7 +18,7 @@ const ServerProvider = ({
   useEffectAsync(async () => {
     if (!error) {
       try {
-        const response = await fetch('/api/server');
+        const response = await apiFetch('/api/server');
         if (response.ok) {
           dispatch(sessionActions.updateServer(await response.json()));
         } else {

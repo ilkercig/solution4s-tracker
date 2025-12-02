@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffectAsync } from '../../reactHelper';
 import { sessionActions } from '../../store';
 import fetchOrThrow from '../util/fetchOrThrow';
+import apiFetch from '../util/apiFetch';
 
 export const nativeEnvironment = window.appInterface || (window.webkit && window.webkit.messageHandlers.appInterface);
 
@@ -20,7 +21,7 @@ export const generateLoginToken = async () => {
     let token = '';
     try {
       const expiration = dayjs().add(6, 'months').toISOString();
-      const response = await fetch('/api/session/token', {
+      const response = await apiFetch('/api/session/token', {
         method: 'POST',
         body: new URLSearchParams(`expiration=${expiration}`),
       });
