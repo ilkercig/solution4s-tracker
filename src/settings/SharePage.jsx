@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -15,9 +15,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTranslation } from '../common/components/LocalizationProvider';
 import PageLayout from '../common/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
-import { useCatchCallback } from '../reactHelper';
+import { useCatch, useCatchCallback } from '../reactHelper';
 import useSettingsStyles from './common/useSettingsStyles';
 import fetchOrThrow from '../common/util/fetchOrThrow';
+import Loader from '../common/components/Loader';
 
 const SharePage = () => {
   const navigate = useNavigate();
@@ -26,10 +27,24 @@ const SharePage = () => {
 
   const { id } = useParams();
 
-  const device = useSelector((state) => state.devices.items[id]);
+  const storeDevice = useSelector((state) => state.devices.items[id]);
+  const [device, setDevice] = useState(storeDevice);
 
   const [expiration, setExpiration] = useState(dayjs().add(1, 'week').locale('en').format('YYYY-MM-DD'));
   const [link, setLink] = useState();
+
+  const fetchDevice = useCatch(async () => {
+    const response = await fetchOrThrow(`/api/devices/${id}`);
+    setDevice(await response.json());
+  });
+
+  useEffect(() => {
+    if (storeDevice) {
+      setDevice(storeDevice);
+    } else {
+      fetchDevice();
+    }
+  }, [storeDevice, id]);
 
   const handleShare = useCatchCallback(async () => {
     const expirationTime = dayjs(expiration).toISOString();
@@ -41,13 +56,17 @@ const SharePage = () => {
     setLink(`${window.location.origin}?token=${token}`);
   }, [id, expiration, setLink]);
 
+  if (!device) {
+    return (<Loader />);
+  }
+
   return (
     <PageLayout menu={<SettingsMenu />} breadcrumbs={['deviceShare']}>
       <Container maxWidth="xs" className={classes.container}>
         <Accordion defaultExpanded>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle1">
-              {t('sharedRequired')}
+              {t('deviceShare')}
             </Typography>
           </AccordionSummary>
           <AccordionDetails className={classes.details}>
