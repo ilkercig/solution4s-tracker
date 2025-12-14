@@ -161,7 +161,7 @@ const LoginLayout = ({ children }) => {
               </Typography>
               <Typography className={classes.description}>
                 Solution4s Takip Portalı'na hoş geldiniz. 
-                Araçlarınızı kolayca takip edin ve yönetin.
+                Cihazlarınızı kolayca takip edin ve yönetin.
               </Typography>
               <div className={classes.featureList}>
                 <div className={classes.featureItem}>
