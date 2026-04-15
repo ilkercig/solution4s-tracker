@@ -1,6 +1,10 @@
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  Divider, Typography, IconButton, useMediaQuery, Toolbar,
+  Divider,
+  Typography,
+  IconButton,
+  useMediaQuery,
+  Toolbar,
   List,
   ListItem,
 } from '@mui/material';
@@ -19,6 +23,7 @@ import { useCatch } from '../reactHelper';
 import MapScale from '../map/MapScale';
 import BackIcon from '../common/components/BackIcon';
 import fetchOrThrow from '../common/util/fetchOrThrow';
+import { deviceEquality } from '../common/util/deviceEquality';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -64,7 +69,10 @@ const EmulatorPage = () => {
 
   const isPhone = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const devices = useSelector((state) => state.devices.items);
+  const devices = useSelector(
+    (state) => state.devices.items,
+    deviceEquality(['id', 'name', 'uniqueId']),
+  );
   const deviceId = useSelector((state) => state.devices.selectedId);
   const positions = useSelector((state) => state.session.positions);
 
@@ -108,7 +116,9 @@ const EmulatorPage = () => {
             <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
               <BackIcon />
             </IconButton>
-            <Typography variant="h6" className={classes.title}>{t('sharedEmulator')}</Typography>
+            <Typography variant="h6" className={classes.title}>
+              {t('sharedEmulator')}
+            </Typography>
           </Toolbar>
           <Divider />
           <List>

@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import {
-  Autocomplete,
-  Checkbox,
-  FormControlLabel,
-  MenuItem,
-  TextField,
-} from '@mui/material';
+import { Autocomplete, Checkbox, FormControlLabel, MenuItem, TextField } from '@mui/material';
 import { useTranslation } from '../../common/components/LocalizationProvider';
 import { useRestriction } from '../../common/util/permissions';
 import { useEffectAsync } from '../../reactHelper';
@@ -38,9 +32,13 @@ const BaseCommandView = ({
       const saved = await savedResponse.json();
       let combined = saved.map((it) => ({ ...it, optionType: 'saved', key: `saved-${it.id}` }));
       if (!limitCommands) {
-        const typesResponse = await fetchOrThrow(`/api/commands/types?${new URLSearchParams({ deviceId }).toString()}`);
+        const typesResponse = await fetchOrThrow(
+          `/api/commands/types?${new URLSearchParams({ deviceId }).toString()}`,
+        );
         const types = await typesResponse.json();
-        combined = combined.concat(types.map((it) => ({ ...it, optionType: 'type', key: `type-${it.type}` })));
+        combined = combined.concat(
+          types.map((it) => ({ ...it, optionType: 'type', key: `type-${it.type}` })),
+        );
       }
       setOptions(combined);
     } else {
@@ -89,7 +87,8 @@ const BaseCommandView = ({
         options={options}
         groupBy={
           includeSaved
-            ? (option) => option.optionType === 'saved' ? t('sharedSavedCommands') : t('sharedType')
+            ? (option) =>
+                option.optionType === 'saved' ? t('sharedSavedCommands') : t('sharedType')
             : null
         }
         getOptionLabel={(option) =>
@@ -98,7 +97,7 @@ const BaseCommandView = ({
             : t(prefixString('command', option.type))
         }
         renderOption={(props, option) => (
-          <MenuItem {...props} key={option.key} value={option.key}>
+          <MenuItem key={option.key} {...props} value={option.key}>
             {option.optionType === 'saved'
               ? option.description
               : t(prefixString('command', option.type))}
@@ -118,6 +117,7 @@ const BaseCommandView = ({
           if (type === 'boolean') {
             return (
               <FormControlLabel
+                key={key}
                 control={
                   <Checkbox
                     checked={item.attributes[key]}
@@ -134,6 +134,7 @@ const BaseCommandView = ({
           }
           return (
             <TextField
+              key={key}
               type={type === 'number' ? 'number' : 'text'}
               value={item.attributes[key]}
               onChange={(e) => {

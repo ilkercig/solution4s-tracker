@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import {
-  Table, TableRow, TableCell, TableHead, TableBody, IconButton,
-} from '@mui/material';
+import { Table, TableRow, TableCell, TableHead, TableBody, IconButton } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useEffectAsync } from '../reactHelper';
@@ -59,7 +57,7 @@ const ScheduledPage = () => {
   };
 
   return (
-    <PageLayout menu={<ReportsMenu />} breadcrumbs={['settingsTitle', 'reportScheduled']}>
+    <PageLayout menu={<ReportsMenu />} breadcrumbs={['reportTitle', 'reportScheduled']}>
       <Table>
         <TableHead>
           <TableRow>
@@ -70,18 +68,22 @@ const ScheduledPage = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {!loading ? items.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{formatType(item.type)}</TableCell>
-              <TableCell>{item.description}</TableCell>
-              <TableCell>{calendars[item.calendarId].name}</TableCell>
-              <TableCell className={classes.columnAction} padding="none">
-                <IconButton size="small" onClick={() => setRemovingId(item.id)}>
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          )) : (<TableShimmer columns={4} endAction />)}
+          {!loading ? (
+            items.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>{formatType(item.type)}</TableCell>
+                <TableCell>{item.description}</TableCell>
+                <TableCell>{calendars[item.calendarId].name}</TableCell>
+                <TableCell className={classes.columnAction} padding="none">
+                  <IconButton size="small" onClick={() => setRemovingId(item.id)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableShimmer columns={4} endAction />
+          )}
         </TableBody>
       </Table>
       <RemoveDialog

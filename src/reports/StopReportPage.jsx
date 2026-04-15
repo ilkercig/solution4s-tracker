@@ -2,17 +2,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@mui/material/styles';
-import {
-  IconButton,
-  Table, TableBody, TableCell, TableHead, TableRow,
-} from '@mui/material';
+import { IconButton, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import LocationSearchingIcon from '@mui/icons-material/LocationSearching';
 import {
-  formatDistance, formatVolume, formatTime, formatNumericHours,
+  formatAddress,
+  formatDistance,
+  formatVolume,
+  formatTime,
+  formatNumericHours,
 } from '../common/util/formatter';
 import ReportFilter from './components/ReportFilter';
-import { useAttributePreference } from '../common/util/preferences';
+import { useAttributePreference, usePreference } from '../common/util/preferences';
 import { useTranslation } from '../common/components/LocalizationProvider';
 import PageLayout from '../common/components/PageLayout';
 import ReportsMenu from './components/ReportsMenu';
@@ -30,6 +31,7 @@ import scheduleReport from './common/scheduleReport';
 import MapScale from '../map/MapScale';
 import fetchOrThrow from '../common/util/fetchOrThrow';
 import exportExcel from '../common/util/exportExcel';
+import { deviceEquality } from '../common/util/deviceEquality';
 
 const columnsArray = [
   ['startTime', 'reportStartTime'],
@@ -48,12 +50,18 @@ const StopReportPage = () => {
   const t = useTranslation();
   const theme = useTheme();
 
-  const devices = useSelector((state) => state.devices.items);
+  const devices = useSelector((state) => state.devices.items, deviceEquality(['id', 'name']));
 
   const distanceUnit = useAttributePreference('distanceUnit');
   const volumeUnit = useAttributePreference('volumeUnit');
+  const coordinateFormat = usePreference('coordinateFormat');
 
-  const [columns, setColumns] = usePersistedState('stopColumns', ['startTime', 'endTime', 'startOdometer', 'address']);
+  const [columns, setColumns] = usePersistedState('stopColumns', [
+    'startTime',
+    'endTime',
+    'startOdometer',
+    'address',
+  ]);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -84,7 +92,7 @@ const StopReportPage = () => {
       columns.forEach((key) => {
         const header = t(columnsMap.get(key));
         if (key === 'address') {
-          row[header] = item.address || '';
+          row[header] = formatAddress(item, coordinateFormat);
         } else {
           row[header] = formatValue(item, key);
         }
@@ -117,7 +125,13 @@ const StopReportPage = () => {
       case 'spentFuel':
         return value > 0 ? formatVolume(value, volumeUnit, t) : null;
       case 'address':
-        return (<AddressValue latitude={item.latitude} longitude={item.longitude} originalAddress={value} />);
+        return (
+          <AddressValue
+            latitude={item.latitude}
+            longitude={item.longitude}
+            originalAddress={value}
+          />
+        );
       default:
         return value;
     }
@@ -131,12 +145,14 @@ const StopReportPage = () => {
             <MapView>
               <MapGeofence />
               <MapPositions
-                positions={[{
-                  deviceId: selectedItem.deviceId,
-                  fixTime: selectedItem.startTime,
-                  latitude: selectedItem.latitude,
-                  longitude: selectedItem.longitude,
-                }]}
+                positions={[
+                  {
+                    deviceId: selectedItem.deviceId,
+                    fixTime: selectedItem.startTime,
+                    latitude: selectedItem.latitude,
+                    longitude: selectedItem.longitude,
+                  },
+                ]}
                 titleField="fixTime"
               />
             </MapView>
@@ -146,7 +162,13 @@ const StopReportPage = () => {
         )}
         <div className={classes.containerMain}>
           <div className={classes.header}>
-            <ReportFilter onShow={onShow} onExport={onExport} onSchedule={onSchedule} deviceType="multiple" loading={loading}>
+            <ReportFilter
+              onShow={onShow}
+              onExport={onExport}
+              onSchedule={onSchedule}
+              deviceType="multiple"
+              loading={loading}
+            >
               <ColumnSelect columns={columns} setColumns={setColumns} columnsArray={columnsArray} />
             </ReportFilter>
           </div>
@@ -155,31 +177,35 @@ const StopReportPage = () => {
               <TableRow>
                 <TableCell className={classes.columnAction} />
                 <TableCell>{t('sharedDevice')}</TableCell>
-                {columns.map((key) => (<TableCell key={key}>{t(columnsMap.get(key))}</TableCell>))}
+                {columns.map((key) => (
+                  <TableCell key={key}>{t(columnsMap.get(key))}</TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {!loading ? items.map((item) => (
-                <TableRow key={item.positionId}>
-                  <TableCell className={classes.columnAction} padding="none">
-                    {selectedItem === item ? (
-                      <IconButton size="small" onClick={() => setSelectedItem(null)}>
-                        <GpsFixedIcon fontSize="small" />
-                      </IconButton>
-                    ) : (
-                      <IconButton size="small" onClick={() => setSelectedItem(item)}>
-                        <LocationSearchingIcon fontSize="small" />
-                      </IconButton>
-                    )}
-                  </TableCell>
-                  <TableCell>{devices[item.deviceId].name}</TableCell>
-                  {columns.map((key) => (
-                    <TableCell key={key}>
-                      {formatValue(item, key)}
+              {!loading ? (
+                items.map((item) => (
+                  <TableRow key={item.positionId}>
+                    <TableCell className={classes.columnAction} padding="none">
+                      {selectedItem === item ? (
+                        <IconButton size="small" onClick={() => setSelectedItem(null)}>
+                          <GpsFixedIcon fontSize="small" />
+                        </IconButton>
+                      ) : (
+                        <IconButton size="small" onClick={() => setSelectedItem(item)}>
+                          <LocationSearchingIcon fontSize="small" />
+                        </IconButton>
+                      )}
                     </TableCell>
-                  ))}
-                </TableRow>
-              )) : (<TableShimmer columns={columns.length + 2} startAction />)}
+                    <TableCell>{devices[item.deviceId].name}</TableCell>
+                    {columns.map((key) => (
+                      <TableCell key={key}>{formatValue(item, key)}</TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableShimmer columns={columns.length + 2} startAction />
+              )}
             </TableBody>
           </Table>
         </div>

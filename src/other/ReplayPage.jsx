@@ -1,9 +1,5 @@
-import {
-  useState, useEffect, useRef, useCallback,
-} from 'react';
-import {
-  IconButton, Paper, Slider, Toolbar, Typography,
-} from '@mui/material';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { IconButton, Paper, Slider, Toolbar, Typography } from '@mui/material';
 import { makeStyles } from 'tss-react/mui';
 import TuneIcon from '@mui/icons-material/Tune';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -27,6 +23,7 @@ import StatusCard from '../common/components/StatusCard';
 import MapScale from '../map/MapScale';
 import BackIcon from '../common/components/BackIcon';
 import fetchOrThrow from '../common/util/fetchOrThrow';
+import MapOverlay from '../map/overlay/MapOverlay';
 
 const useStyles = makeStyles()((theme) => ({
   root: {
@@ -133,13 +130,19 @@ const ReplayPage = () => {
     }
   }, [index, positions]);
 
-  const onPointClick = useCallback((_, index) => {
-    setIndex(index);
-  }, [setIndex]);
+  const onPointClick = useCallback(
+    (_, index) => {
+      setIndex(index);
+    },
+    [setIndex],
+  );
 
-  const onMarkerClick = useCallback((positionId) => {
-    setShowCard(!!positionId);
-  }, [setShowCard]);
+  const onMarkerClick = useCallback(
+    (positionId) => {
+      setShowCard(!!positionId);
+    },
+    [setShowCard],
+  );
 
   const onShow = useCatch(async ({ deviceIds, from, to }) => {
     const deviceId = deviceIds.find(() => true);
@@ -167,11 +170,16 @@ const ReplayPage = () => {
   return (
     <div className={classes.root}>
       <MapView>
+        <MapOverlay />
         <MapGeofence />
         <MapRoutePath positions={positions} />
         <MapRoutePoints positions={positions} onClick={onPointClick} showSpeedControl />
         {index < positions.length && (
-          <MapPositions positions={[positions[index]]} onMarkerClick={onMarkerClick} titleField="fixTime" />
+          <MapPositions
+            positions={[positions[index]]}
+            onMarkerClick={onMarkerClick}
+            titleField="fixTime"
+          />
         )}
       </MapView>
       <MapScale />
@@ -182,13 +190,18 @@ const ReplayPage = () => {
             <IconButton edge="start" sx={{ mr: 2 }} onClick={() => navigate(-1)}>
               <BackIcon />
             </IconButton>
-            <Typography variant="h6" className={classes.title}>{t('reportReplay')}</Typography>
+            <Typography variant="h6" className={classes.title}>
+              {t('reportReplay')}
+            </Typography>
             {loaded && (
               <>
                 <IconButton onClick={handleDownload}>
                   <DownloadIcon />
                 </IconButton>
-                <IconButton edge="end" onClick={() => updateReportParams(searchParams, setSearchParams, 'ignore', [])}>
+                <IconButton
+                  edge="end"
+                  onClick={() => updateReportParams(searchParams, setSearchParams, 'ignore', [])}
+                >
                   <TuneIcon />
                 </IconButton>
               </>
@@ -196,9 +209,11 @@ const ReplayPage = () => {
           </Toolbar>
         </Paper>
         <Paper className={classes.content} square>
-          {loaded ? (
+          {loaded && (
             <>
-              <Typography variant="subtitle1" align="center">{deviceName}</Typography>
+              <Typography variant="subtitle1" align="center">
+                {deviceName}
+              </Typography>
               <Slider
                 className={classes.slider}
                 max={positions.length - 1}
@@ -209,21 +224,31 @@ const ReplayPage = () => {
               />
               <div className={classes.controls}>
                 {`${index + 1}/${positions.length}`}
-                <IconButton onClick={() => setIndex((index) => index - 1)} disabled={playing || index <= 0}>
+                <IconButton
+                  onClick={() => setIndex((index) => index - 1)}
+                  disabled={playing || index <= 0}
+                >
                   <FastRewindIcon />
                 </IconButton>
-                <IconButton onClick={() => setPlaying(!playing)} disabled={index >= positions.length - 1}>
-                  {playing ? <PauseIcon /> : <PlayArrowIcon /> }
+                <IconButton
+                  onClick={() => setPlaying(!playing)}
+                  disabled={index >= positions.length - 1}
+                >
+                  {playing ? <PauseIcon /> : <PlayArrowIcon />}
                 </IconButton>
-                <IconButton onClick={() => setIndex((index) => index + 1)} disabled={playing || index >= positions.length - 1}>
+                <IconButton
+                  onClick={() => setIndex((index) => index + 1)}
+                  disabled={playing || index >= positions.length - 1}
+                >
                   <FastForwardIcon />
                 </IconButton>
                 {formatTime(positions[index].fixTime, 'seconds')}
               </div>
             </>
-          ) : (
-            <ReportFilter onShow={onShow} deviceType="single" loading={loading} />
           )}
+          <div style={{ display: loaded ? 'none' : 'block' }}>
+            <ReportFilter onShow={onShow} deviceType="single" loading={loading} />
+          </div>
         </Paper>
       </div>
       {showCard && index < positions.length && (

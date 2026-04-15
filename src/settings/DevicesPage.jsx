@@ -2,20 +2,29 @@ import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
-  Table, TableRow, TableCell, TableHead, TableBody, Button, TableFooter, FormControlLabel, Switch,
+  Table,
+  TableRow,
+  TableCell,
+  TableHead,
+  TableBody,
+  Button,
+  TableFooter,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import LinkIcon from '@mui/icons-material/Link';
 import { useTheme } from '@mui/material/styles';
-import { useEffectAsync } from '../reactHelper';
+import { useEffectAsync, useScrollToLoad, pageSize } from '../reactHelper';
 import { useTranslation } from '../common/components/LocalizationProvider';
 import PageLayout from '../common/components/PageLayout';
 import SettingsMenu from './components/SettingsMenu';
 import CollectionFab from './components/CollectionFab';
 import CollectionActions from './components/CollectionActions';
 import TableShimmer from '../common/components/TableShimmer';
-import SearchHeader, { filterByKeyword } from './components/SearchHeader';
-import { formatStatus, formatTime } from '../common/util/formatter';
+import SearchHeader from './components/SearchHeader';
+import { formatAddress, formatStatus, formatTime } from '../common/util/formatter';
 import { useDeviceReadonly, useManager } from '../common/util/permissions';
+import { usePreference } from '../common/util/preferences';
 import useSettingsStyles from './common/useSettingsStyles';
 import DeviceUsersValue from './components/DeviceUsersValue';
 import usePersistedState from '../common/util/usePersistedState';
@@ -33,6 +42,7 @@ const DevicesPage = () => {
 
   const manager = useManager();
   const deviceReadonly = useDeviceReadonly();
+  const coordinateFormat = usePreference('coordinateFormat');
 
   const positions = useSelector((state) => state.session.positions);
 
@@ -42,19 +52,31 @@ const DevicesPage = () => {
   const [showAll, setShowAll] = usePersistedState('showAllDevices', false);
   const [loading, setLoading] = useState(false);
 
-  useEffectAsync(async () => {
+  const loadItems = async (offset) => {
     setLoading(true);
     try {
-      const query = new URLSearchParams({ all: showAll });
+      const query = new URLSearchParams({ all: showAll, limit: pageSize, offset });
+      if (searchKeyword) {
+        query.append('keyword', searchKeyword);
+      }
       const response = await fetchOrThrow(`/api/devices?${query.toString()}`);
-      setItems(await response.json());
+      const data = await response.json();
+      setItems((previous) => (offset ? [...previous, ...data] : data));
+      setHasMore(data.length >= pageSize);
     } finally {
       setLoading(false);
     }
-  }, [timestamp, showAll]);
+  };
+
+  const { sentinelRef, hasMore, setHasMore } = useScrollToLoad(() => loadItems(items.length));
+
+  useEffectAsync(async () => {
+    setItems([]);
+    await loadItems(0);
+  }, [timestamp, showAll, searchKeyword]);
 
   const handleExport = async () => {
-    const data = items.filter(filterByKeyword(searchKeyword)).map((item) => ({
+    const data = items.map((item) => ({
       [t('sharedName')]: item.name,
       [t('deviceIdentifier')]: item.uniqueId,
       [t('groupParent')]: item.groupId ? groups[item.groupId]?.name : null,
@@ -64,7 +86,9 @@ const DevicesPage = () => {
       [t('userExpirationTime')]: formatTime(item.expirationTime, 'date'),
       [t('deviceStatus')]: formatStatus(item.status, t),
       [t('deviceLastUpdate')]: formatTime(item.lastUpdate, 'minutes'),
-      [t('positionAddress')]: positions[item.id]?.address || '',
+      [t('positionAddress')]: positions[item.id]
+        ? formatAddress(positions[item.id], coordinateFormat)
+        : '',
     }));
     const sheets = new Map();
     sheets.set(t('deviceTitle'), data);
@@ -97,7 +121,7 @@ const DevicesPage = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {!loading ? items.filter(filterByKeyword(searchKeyword)).map((item) => (
+          {items.map((item) => (
             <TableRow key={item.id}>
               <TableCell>{item.name}</TableCell>
               <TableCell>{item.uniqueId}</TableCell>
@@ -115,7 +139,11 @@ const DevicesPage = () => {
                   />
                 )}
               </TableCell>
-              {manager && <TableCell><DeviceUsersValue deviceId={item.id} /></TableCell>}
+              {manager && (
+                <TableCell>
+                  <DeviceUsersValue deviceId={item.id} />
+                </TableCell>
+              )}
               <TableCell className={classes.columnAction} padding="none">
                 <CollectionActions
                   itemId={item.id}
@@ -127,22 +155,25 @@ const DevicesPage = () => {
                 />
               </TableCell>
             </TableRow>
-          )) : (<TableShimmer columns={manager ? 9 : 8} endAction />)}
+          ))}
+          {loading && <TableShimmer columns={manager ? 9 : 8} endAction />}
         </TableBody>
         <TableFooter>
           <TableRow>
             <TableCell>
-              <Button onClick={handleExport} variant="text">{t('reportExport')}</Button>
+              <Button onClick={handleExport} variant="text">
+                {t('reportExport')}
+              </Button>
             </TableCell>
             <TableCell colSpan={manager ? 9 : 8} align="right">
               <FormControlLabel
-                control={(
+                control={
                   <Switch
                     checked={showAll}
                     onChange={(e) => setShowAll(e.target.checked)}
                     size="small"
                   />
-                )}
+                }
                 label={t('notificationAlways')}
                 labelPlacement="start"
                 disabled={!manager}
@@ -151,6 +182,7 @@ const DevicesPage = () => {
           </TableRow>
         </TableFooter>
       </Table>
+      {hasMore && <div ref={sentinelRef} />}
       <CollectionFab editPath="/settings/device" />
     </PageLayout>
   );

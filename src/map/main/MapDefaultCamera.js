@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { usePreference } from '../../common/util/preferences';
 import { map } from '../core/MapView';
 
-const MapDefaultCamera = ({ mapReady }) => {
+const MapDefaultCamera = () => {
   const selectedDeviceId = useSelector((state) => state.devices.selectedId);
   const positions = useSelector((state) => state.session.positions);
 
@@ -15,7 +15,7 @@ const MapDefaultCamera = ({ mapReady }) => {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    if (!mapReady || initialized) return;
+    if (initialized) return;
     if (selectedDeviceId) {
       const position = positions[selectedDeviceId];
       if (position) {
@@ -35,7 +35,10 @@ const MapDefaultCamera = ({ mapReady }) => {
       } else {
         const coordinates = Object.values(positions).map((item) => [item.longitude, item.latitude]);
         if (coordinates.length > 1) {
-          const bounds = coordinates.reduce((bounds, item) => bounds.extend(item), new maplibregl.LngLatBounds(coordinates[0], coordinates[1]));
+          const bounds = coordinates.reduce(
+            (bounds, item) => bounds.extend(item),
+            new maplibregl.LngLatBounds(coordinates[0], coordinates[1]),
+          );
           const canvas = map.getCanvas();
           map.fitBounds(bounds, {
             duration: 0,
@@ -52,11 +55,9 @@ const MapDefaultCamera = ({ mapReady }) => {
         }
       }
     }
-  }, [selectedDeviceId, initialized, defaultLatitude, defaultLongitude, defaultZoom, positions, mapReady]);
+  }, [selectedDeviceId, initialized, defaultLatitude, defaultLongitude, defaultZoom, positions]);
 
   return null;
 };
-
-MapDefaultCamera.handlesMapReady = true;
 
 export default MapDefaultCamera;

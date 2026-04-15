@@ -1,13 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  FormControl, InputLabel, Select, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, Link, IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Link,
+  IconButton,
 } from '@mui/material';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import LocationSearchingIcon from '@mui/icons-material/LocationSearching';
 import { useSelector } from 'react-redux';
 import { useTheme } from '@mui/material/styles';
-import { formatSpeed, formatTime } from '../common/util/formatter';
+import { formatAddress, formatSpeed, formatTime } from '../common/util/formatter';
 import ReportFilter, { updateReportParams } from './components/ReportFilter';
 import { prefixString, unprefixString } from '../common/util/stringUtils';
 import { useTranslation, useTranslationKeys } from '../common/components/LocalizationProvider';
@@ -18,7 +28,7 @@ import ColumnSelect from './components/ColumnSelect';
 import { useCatch, useEffectAsync } from '../reactHelper';
 import useReportStyles from './common/useReportStyles';
 import TableShimmer from '../common/components/TableShimmer';
-import { useAttributePreference } from '../common/util/preferences';
+import { useAttributePreference, usePreference } from '../common/util/preferences';
 import MapView from '../map/core/MapView';
 import MapGeofence from '../map/MapGeofence';
 import MapPositions from '../map/MapPositions';
@@ -29,6 +39,7 @@ import SelectField from '../common/components/SelectField';
 import fetchOrThrow from '../common/util/fetchOrThrow';
 import exportExcel from '../common/util/exportExcel';
 import AddressValue from '../common/components/AddressValue';
+import { deviceEquality } from '../common/util/deviceEquality';
 
 const columnsArray = [
   ['eventTime', 'positionFixTime'],
@@ -48,10 +59,14 @@ const EventReportPage = () => {
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const devices = useSelector((state) => state.devices.items);
+  const devices = useSelector(
+    (state) => state.devices.items,
+    deviceEquality(['id', 'name', 'uniqueId']),
+  );
   const geofences = useSelector((state) => state.geofences.items);
 
   const speedUnit = useAttributePreference('speedUnit');
+  const coordinateFormat = usePreference('coordinateFormat');
 
   const [allEventTypes, setAllEventTypes] = useState([['allEvents', 'eventAll']]);
 
@@ -60,7 +75,12 @@ const EventReportPage = () => {
     name: t(it),
   }));
 
-  const [columns, setColumns] = usePersistedState('eventColumns', ['eventTime', 'type', 'address', 'attributes']);
+  const [columns, setColumns] = usePersistedState('eventColumns', [
+    'eventTime',
+    'type',
+    'address',
+    'attributes',
+  ]);
   const eventTypes = useMemo(() => searchParams.getAll('eventType'), [searchParams]);
   const alarmTypes = useMemo(() => searchParams.getAll('alarmType'), [searchParams]);
   const [items, setItems] = useState([]);
@@ -73,7 +93,7 @@ const EventReportPage = () => {
     if (!eventTypes.length) {
       updateReportParams(searchParams, setSearchParams, 'eventType', ['allEvents']);
     }
-  }, [searchParams, setSearchParams, eventTypes])
+  }, [searchParams, setSearchParams, eventTypes]);
 
   useEffect(() => {
     if (selectedItem?.positionId) {
@@ -86,7 +106,10 @@ const EventReportPage = () => {
   useEffectAsync(async () => {
     const response = await fetchOrThrow('/api/notifications/types');
     const types = await response.json();
-    setAllEventTypes([...allEventTypes, ...types.map((it) => [it.type, prefixString('event', it.type)])]);
+    setAllEventTypes([
+      ...allEventTypes,
+      ...types.map((it) => [it.type, prefixString('event', it.type)]),
+    ]);
   }, []);
 
   const onShow = useCatch(async ({ deviceIds, groupIds, from, to }) => {
@@ -106,16 +129,16 @@ const EventReportPage = () => {
       });
       const events = await response.json();
       setItems(events);
-      const positionIds = Array.from(new Set(events
-        .map((event) => event.positionId)
-        .filter((id) => id)));
+      const positionIds = Array.from(
+        new Set(events.map((event) => event.positionId).filter((id) => id)),
+      );
       const positionsMap = {};
       if (positionIds.length > 0) {
         const positionsQuery = new URLSearchParams();
         positionIds.slice(0, 128).forEach((id) => positionsQuery.append('id', id));
         const positionsResponse = await fetchOrThrow(`/api/positions?${positionsQuery.toString()}`);
         const positionsArray = await positionsResponse.json();
-        positionsArray.forEach((p) => positionsMap[p.id] = p);
+        positionsArray.forEach((p) => (positionsMap[p.id] = p));
       }
       setPositions(positionsMap);
     } finally {
@@ -136,7 +159,8 @@ const EventReportPage = () => {
         if (key === 'attributes' && item.type === 'media') {
           row[header] = item.attributes.file;
         } else if (key === 'address') {
-          row[header] = positions[item.positionId]?.address || '';
+          const position = positions[item.positionId];
+          row[header] = position ? formatAddress(position, coordinateFormat) : '';
         } else {
           row[header] = formatValue(item, key);
         }
@@ -194,7 +218,14 @@ const EventReportPage = () => {
           case 'driverChanged':
             return item.attributes.driverUniqueId;
           case 'media':
-            return (<Link href={`/api/media/${devices[item.deviceId]?.uniqueId}/${item.attributes.file}`} target="_blank">{item.attributes.file}</Link>);
+            return (
+              <Link
+                href={`/api/media/${devices[item.deviceId]?.uniqueId}/${item.attributes.file}`}
+                target="_blank"
+              >
+                {item.attributes.file}
+              </Link>
+            );
           case 'commandResult':
             return item.attributes.result;
           default:
@@ -220,7 +251,13 @@ const EventReportPage = () => {
         )}
         <div className={classes.containerMain}>
           <div className={classes.header}>
-            <ReportFilter onShow={onShow} onExport={onExport} onSchedule={onSchedule} deviceType="multiple" loading={loading}>
+            <ReportFilter
+              onShow={onShow}
+              onExport={onExport}
+              onSchedule={onSchedule}
+              deviceType="multiple"
+              loading={loading}
+            >
               <div className={classes.filterItem}>
                 <FormControl fullWidth>
                   <InputLabel>{t('reportEventTypes')}</InputLabel>
@@ -233,12 +270,14 @@ const EventReportPage = () => {
                       if (values.includes('allEvents') && values.length > 1) {
                         values = [clicked];
                       }
-                      updateReportParams(searchParams, setSearchParams, 'eventType', values)
+                      updateReportParams(searchParams, setSearchParams, 'eventType', values);
                     }}
                     multiple
                   >
                     {allEventTypes.map(([key, string]) => (
-                      <MenuItem key={key} value={key}>{t(string)}</MenuItem>
+                      <MenuItem key={key} value={key}>
+                        {t(string)}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -247,8 +286,11 @@ const EventReportPage = () => {
                 <div className={classes.filterItem}>
                   <SelectField
                     multiple
+                    singleLine
                     value={alarmTypes}
-                    onChange={(e) => updateReportParams(searchParams, setSearchParams, 'alarmType', e.target.value)}
+                    onChange={(e) =>
+                      updateReportParams(searchParams, setSearchParams, 'alarmType', e.target.value)
+                    }
                     data={alarms}
                     keyGetter={(it) => it.key}
                     label={t('sharedAlarms')}
@@ -264,31 +306,37 @@ const EventReportPage = () => {
               <TableRow>
                 <TableCell className={classes.columnAction} />
                 <TableCell>{t('sharedDevice')}</TableCell>
-                {columns.map((key) => (<TableCell key={key}>{t(columnsMap.get(key))}</TableCell>))}
+                {columns.map((key) => (
+                  <TableCell key={key}>{t(columnsMap.get(key))}</TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
-              {!loading ? items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className={classes.columnAction} padding="none">
-                    {(item.positionId && (selectedItem === item ? (
-                      <IconButton size="small" onClick={() => setSelectedItem(null)}>
-                        <GpsFixedIcon fontSize="small" />
-                      </IconButton>
-                    ) : (
-                      <IconButton size="small" onClick={() => setSelectedItem(item)}>
-                        <LocationSearchingIcon fontSize="small" />
-                      </IconButton>
-                    ))) || ''}
-                  </TableCell>
-                  <TableCell>{devices[item.deviceId].name}</TableCell>
-                  {columns.map((key) => (
-                    <TableCell key={key}>
-                      {formatValue(item, key)}
+              {!loading ? (
+                items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className={classes.columnAction} padding="none">
+                      {(item.positionId &&
+                        (selectedItem === item ? (
+                          <IconButton size="small" onClick={() => setSelectedItem(null)}>
+                            <GpsFixedIcon fontSize="small" />
+                          </IconButton>
+                        ) : (
+                          <IconButton size="small" onClick={() => setSelectedItem(item)}>
+                            <LocationSearchingIcon fontSize="small" />
+                          </IconButton>
+                        ))) ||
+                        ''}
                     </TableCell>
-                  ))}
-                </TableRow>
-              )) : (<TableShimmer columns={columns.length + 2} />)}
+                    <TableCell>{devices[item.deviceId].name}</TableCell>
+                    {columns.map((key) => (
+                      <TableCell key={key}>{formatValue(item, key)}</TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableShimmer columns={columns.length + 2} />
+              )}
             </TableBody>
           </Table>
         </div>

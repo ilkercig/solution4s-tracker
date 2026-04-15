@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  FormControl, InputLabel, Select, MenuItem, Button, TextField, Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  TextField,
+  Typography,
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 import dayjs from 'dayjs';
@@ -10,6 +16,7 @@ import useReportStyles from '../common/useReportStyles';
 import SplitButton from '../../common/components/SplitButton';
 import SelectField from '../../common/components/SelectField';
 import { useRestriction } from '../../common/util/permissions';
+import { deviceEquality } from '../../common/util/deviceEquality';
 
 export const updateReportParams = (searchParams, setSearchParams, key, values) => {
   const newParams = new URLSearchParams(searchParams);
@@ -20,9 +27,7 @@ export const updateReportParams = (searchParams, setSearchParams, key, values) =
   setSearchParams(newParams, { replace: true });
 };
 
-const ReportFilter = ({
-  children, onShow, onExport, onSchedule, deviceType, loading,
-}) => {
+const ReportFilter = ({ children, onShow, onExport, onSchedule, deviceType, loading }) => {
   const { classes } = useReportStyles();
   const t = useTranslation();
 
@@ -30,15 +35,25 @@ const ReportFilter = ({
 
   const readonly = useRestriction('readonly');
 
-  const devices = useSelector((state) => state.devices.items);
+  const devices = useSelector((state) => state.devices.items, deviceEquality(['id', 'name']));
   const groups = useSelector((state) => state.groups.items);
+  const deviceList = useMemo(
+    () => Object.values(devices).sort((a, b) => a.name.localeCompare(b.name)),
+    [devices],
+  );
+  const groupList = useMemo(
+    () => Object.values(groups).sort((a, b) => a.name.localeCompare(b.name)),
+    [groups],
+  );
 
   const deviceIds = useMemo(() => searchParams.getAll('deviceId').map(Number), [searchParams]);
   const groupIds = useMemo(() => searchParams.getAll('groupId').map(Number), [searchParams]);
   const from = searchParams.get('from');
   const to = searchParams.get('to');
   const [period, setPeriod] = useState('today');
-  const [customFrom, setCustomFrom] = useState(dayjs().subtract(1, 'hour').locale('en').format('YYYY-MM-DDTHH:mm'));
+  const [customFrom, setCustomFrom] = useState(
+    dayjs().subtract(1, 'hour').locale('en').format('YYYY-MM-DDTHH:mm'),
+  );
   const [customTo, setCustomTo] = useState(dayjs().locale('en').format('YYYY-MM-DDTHH:mm'));
   const [selectedOption, setSelectedOption] = useState('json');
 
@@ -46,14 +61,14 @@ const ReportFilter = ({
   const [calendarId, setCalendarId] = useState();
 
   const evaluateDisabled = () => {
-    if (deviceType !== 'none' && !deviceIds.length && !groupIds.length) {
+    if (deviceType === 'single' && !deviceIds.length) {
       return true;
     }
     if (selectedOption === 'schedule' && (!description || !calendarId)) {
       return true;
     }
     return loading;
-  }
+  };
   const disabled = evaluateDisabled();
   const loaded = from && to && !loading;
 
@@ -69,7 +84,7 @@ const ReportFilter = ({
       result.schedule = t('reportSchedule');
     }
     return result;
-  }
+  };
   const options = evaluateOptions();
 
   useEffect(() => {
@@ -130,7 +145,7 @@ const ReportFilter = ({
         setSelectedOption(type);
         break;
     }
-  }
+  };
 
   const onClick = (type) => {
     switch (type) {
@@ -154,13 +169,18 @@ const ReportFilter = ({
         <div className={classes.filterItem}>
           <SelectField
             label={t(deviceType === 'multiple' ? 'deviceTitle' : 'reportDevice')}
-            data={Object.values(devices).sort((a, b) => a.name.localeCompare(b.name))}
+            data={deviceList}
             value={deviceType === 'multiple' ? deviceIds : deviceIds.find(() => true)}
+            placeholder={
+              deviceType === 'multiple' && !groupIds.length ? t('notificationAlways') : null
+            }
             onChange={(e) => {
-              const values = deviceType === 'multiple' ? e.target.value : [e.target.value].filter((id) => id);
+              const values =
+                deviceType === 'multiple' ? e.target.value : [e.target.value].filter((id) => id);
               updateReportParams(searchParams, setSearchParams, 'deviceId', values);
             }}
             multiple={deviceType === 'multiple'}
+            singleLine={deviceType === 'multiple'}
             fullWidth
           />
         </div>
@@ -169,13 +189,14 @@ const ReportFilter = ({
         <div className={classes.filterItem}>
           <SelectField
             label={t('settingsGroups')}
-            data={Object.values(groups).sort((a, b) => a.name.localeCompare(b.name))}
+            data={groupList}
             value={groupIds}
             onChange={(e) => {
               const values = e.target.value;
               updateReportParams(searchParams, setSearchParams, 'groupId', values);
             }}
             multiple
+            singleLine
             fullWidth
           />
         </div>
@@ -185,7 +206,11 @@ const ReportFilter = ({
           <div className={classes.filterItem}>
             <FormControl fullWidth>
               <InputLabel>{t('reportPeriod')}</InputLabel>
-              <Select label={t('reportPeriod')} value={period} onChange={(e) => setPeriod(e.target.value)}>
+              <Select
+                label={t('reportPeriod')}
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+              >
                 <MenuItem value="today">{t('reportToday')}</MenuItem>
                 <MenuItem value="yesterday">{t('reportYesterday')}</MenuItem>
                 <MenuItem value="thisWeek">{t('reportThisWeek')}</MenuItem>
@@ -250,7 +275,9 @@ const ReportFilter = ({
             disabled={disabled}
             onClick={onClick}
           >
-            <Typography variant="button" noWrap>{t(loading ? 'sharedLoading' : 'reportShow')}</Typography>
+            <Typography variant="button" noWrap>
+              {t(loading ? 'sharedLoading' : 'reportShow')}
+            </Typography>
           </Button>
         ) : (
           <SplitButton
