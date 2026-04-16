@@ -38,14 +38,8 @@ const isDevelopment = () => {
  * @returns {string} The base API URL
  */
 export const getApiUrl = () => {
-  if (isDevelopment()) {
-    // In development, use relative path so Vite proxy handles it
-    return '/api';
-  }
-  
-  // In production, use full URL
-  const domain = getServerDomain();
-  return `https://${domain}/api`;
+  // Always use relative path so the proxy (Vite in dev, Vercel in prod) handles routing
+  return '/api';
 };
 
 /**
@@ -74,11 +68,7 @@ export const getSocketUrl = () => {
  * @returns {string} The full server URL (e.g., 'https://xxzwadnmh.traccar.com')
  */
 export const getServerUrl = () => {
-  if (isDevelopment()) {
-    return window.location.origin;
-  }
-  
-  const domain = getServerDomain();
-  return `https://${domain}`;
+  // Always use current origin so requests go through the proxy
+  return window.location.origin;
 };
 
