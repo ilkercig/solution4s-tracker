@@ -557,6 +557,7 @@
     "reportCombined": "Combined",
     "reportPositions": "Positions",
     "reportEvents": "Events",
+    "reportEventsAll": "All Events",
     "reportTrips": "Trips",
     "reportStops": "Stops",
     "reportSummary": "Summary",

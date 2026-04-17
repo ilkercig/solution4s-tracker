@@ -10,12 +10,12 @@ import { useTheme } from '@mui/material/styles';
 import { formatSpeed, formatTime } from '../common/util/formatter';
 import ReportFilter, { updateReportParams } from './components/ReportFilter';
 import { prefixString, unprefixString } from '../common/util/stringUtils';
-import { useTranslation, useTranslationKeys } from '../common/components/LocalizationProvider';
+import { useTranslation } from '../common/components/LocalizationProvider';
 import PageLayout from '../common/components/PageLayout';
 import ReportsMenu from './components/ReportsMenu';
 import usePersistedState from '../common/util/usePersistedState';
 import ColumnSelect from './components/ColumnSelect';
-import { useCatch, useEffectAsync } from '../reactHelper';
+import { useCatch } from '../reactHelper';
 import useReportStyles from './common/useReportStyles';
 import TableShimmer from '../common/components/TableShimmer';
 import { useAttributePreference } from '../common/util/preferences';
@@ -40,7 +40,7 @@ const columnsArray = [
 ];
 const columnsMap = new Map(columnsArray);
 
-const EventReportPage = () => {
+const SimpleEventReportPage = () => {
   const navigate = useNavigate();
   const { classes } = useReportStyles();
   const t = useTranslation();
@@ -53,9 +53,18 @@ const EventReportPage = () => {
 
   const speedUnit = useAttributePreference('speedUnit');
 
-  const [allEventTypes, setAllEventTypes] = useState([['allEvents', 'eventAll']]);
+  const allowedEventTypes = ['alarm', 'geofenceExit', 'geofenceEnter', 'deviceMoving', 'deviceStopped'];
 
-  const alarms = useTranslationKeys((it) => it.startsWith('alarm')).map((it) => ({
+  const allEventTypes = [
+    ['allEvents', 'eventAll'],
+    ['alarm', 'eventAlarm'],
+    ['geofenceExit', 'eventGeofenceExit'],
+    ['geofenceEnter', 'eventGeofenceEnter'],
+    ['deviceMoving', 'eventDeviceMoving'],
+    ['deviceStopped', 'eventDeviceStopped'],
+  ];
+
+  const alarms = ['alarmGeneral', 'alarmMovement', 'alarmLowBattery', 'alarmFallDown'].map((it) => ({
     key: unprefixString('alarm', it),
     name: t(it),
   }));
@@ -83,18 +92,14 @@ const EventReportPage = () => {
     }
   }, [selectedItem, positions]);
 
-  useEffectAsync(async () => {
-    const response = await fetchOrThrow('/api/notifications/types');
-    const types = await response.json();
-    setAllEventTypes([...allEventTypes, ...types.map((it) => [it.type, prefixString('event', it.type)])]);
-  }, []);
 
   const onShow = useCatch(async ({ deviceIds, groupIds, from, to }) => {
     const query = new URLSearchParams({ from, to });
     deviceIds.forEach((deviceId) => query.append('deviceId', deviceId));
     groupIds.forEach((groupId) => query.append('groupId', groupId));
-    eventTypes.forEach((it) => query.append('type', it));
-    if (eventTypes[0] !== 'allEvents' && eventTypes.includes('alarm')) {
+    const typesToQuery = eventTypes[0] === 'allEvents' ? allowedEventTypes : eventTypes;
+    typesToQuery.forEach((it) => query.append('type', it));
+    if (typesToQuery.includes('alarm')) {
       alarmTypes.forEach((it) => query.append('alarm', it));
     }
     setSelectedItem(null);
@@ -148,9 +153,7 @@ const EventReportPage = () => {
 
   const onSchedule = useCatch(async (deviceIds, groupIds, report) => {
     report.type = 'events';
-    if (eventTypes[0] !== 'allEvents') {
-      report.attributes.types = eventTypes.join(',');
-    }
+    report.attributes.types = (eventTypes[0] === 'allEvents' ? allowedEventTypes : eventTypes).join(',');
     await scheduleReport(deviceIds, groupIds, report);
     navigate('/reports/scheduled');
   });
@@ -206,7 +209,7 @@ const EventReportPage = () => {
   };
 
   return (
-    <PageLayout menu={<ReportsMenu />} breadcrumbs={['reportTitle', 'reportEventsAll']}>
+    <PageLayout menu={<ReportsMenu />} breadcrumbs={['reportTitle', 'reportEvents']}>
       <div className={classes.container}>
         {selectedItem && (
           <div className={classes.containerMap}>
@@ -231,9 +234,9 @@ const EventReportPage = () => {
                       let values = e.target.value;
                       const clicked = child.props.value;
                       if (values.includes('allEvents') && values.length > 1) {
-                        values = [clicked];
+                        values = clicked === 'allEvents' ? ['allEvents'] : values.filter((v) => v !== 'allEvents');
                       }
-                      updateReportParams(searchParams, setSearchParams, 'eventType', values)
+                      updateReportParams(searchParams, setSearchParams, 'eventType', values);
                     }}
                     multiple
                   >
@@ -243,7 +246,7 @@ const EventReportPage = () => {
                   </Select>
                 </FormControl>
               </div>
-              {eventTypes[0] !== 'allEvents' && eventTypes.includes('alarm') && (
+              {eventTypes.includes('alarm') && (
                 <div className={classes.filterItem}>
                   <SelectField
                     multiple
@@ -297,4 +300,4 @@ const EventReportPage = () => {
   );
 };
 
-export default EventReportPage;
+export default SimpleEventReportPage;

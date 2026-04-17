@@ -13,7 +13,7 @@ import NotesIcon from '@mui/icons-material/Notes';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import { useLocation } from 'react-router-dom';
 import { useTranslation } from '../../common/components/LocalizationProvider';
-import { useAdministrator, useRestriction } from '../../common/util/permissions';
+import { useAdministrator, useManager, useRestriction } from '../../common/util/permissions';
 import MenuItem from '../../common/components/MenuItem';
 
 const ReportsMenu = () => {
@@ -21,6 +21,7 @@ const ReportsMenu = () => {
   const location = useLocation();
 
   const admin = useAdministrator();
+  const manager = useManager();
   const readonly = useRestriction('readonly');
 
   const buildLink = (path) => {
@@ -59,6 +60,14 @@ const ReportsMenu = () => {
           icon={<NotificationsActiveIcon />}
           selected={location.pathname === '/reports/events'}
         />
+        {manager && (
+          <MenuItem
+            title={t('reportEventsAll')}
+            link={buildLink('/reports/events-all')}
+            icon={<NotificationsActiveIcon />}
+            selected={location.pathname === '/reports/events-all'}
+          />
+        )}
         <MenuItem
           title={t('reportTrips')}
           link={buildLink('/reports/trips')}

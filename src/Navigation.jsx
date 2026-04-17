@@ -17,6 +17,7 @@ import GroupPage from './settings/GroupPage';
 import PositionPage from './other/PositionPage';
 import NetworkPage from './other/NetworkPage';
 import EventReportPage from './reports/EventReportPage';
+import SimpleEventReportPage from './reports/SimpleEventReportPage';
 import ReplayPage from './other/ReplayPage';
 import TripReportPage from './reports/TripReportPage';
 import StopReportPage from './reports/StopReportPage';
@@ -172,7 +173,8 @@ const Navigation = () => {
         <Route path="reports">
           <Route path="combined" element={<CombinedReportPage />} />
           <Route path="chart" element={<ChartReportPage />} />
-          <Route path="events" element={<EventReportPage />} />
+          <Route path="events" element={<SimpleEventReportPage />} />
+          <Route path="events-all" element={<EventReportPage />} />
           <Route path="route" element={<PositionsReportPage />} />
           <Route path="stops" element={<StopReportPage />} />
           <Route path="summary" element={<SummaryReportPage />} />
