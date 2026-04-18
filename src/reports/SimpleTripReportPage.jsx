@@ -33,21 +33,15 @@ import exportExcel from '../common/util/exportExcel';
 
 const columnsArray = [
   ['startTime', 'reportStartTime'],
-  ['startOdometer', 'reportStartOdometer'],
   ['startAddress', 'reportStartAddress'],
   ['endTime', 'reportEndTime'],
-  ['endOdometer', 'reportEndOdometer'],
   ['endAddress', 'reportEndAddress'],
   ['distance', 'sharedDistance'],
-  ['averageSpeed', 'reportAverageSpeed'],
-  ['maxSpeed', 'reportMaximumSpeed'],
   ['duration', 'reportDuration'],
-  ['spentFuel', 'reportSpentFuel'],
-  ['driverName', 'sharedDriver'],
 ];
 const columnsMap = new Map(columnsArray);
 
-const TripReportPage = () => {
+const SimpleTripReportPage = () => {
   const navigate = useNavigate();
   const { classes } = useReportStyles();
   const t = useTranslation();
@@ -59,7 +53,9 @@ const TripReportPage = () => {
   const speedUnit = useAttributePreference('speedUnit');
   const volumeUnit = useAttributePreference('volumeUnit');
 
-  const [columns, setColumns] = usePersistedState('tripColumns', ['startTime', 'endTime', 'distance', 'averageSpeed']);
+  const validColumnKeys = new Set(columnsArray.map(([key]) => key));
+  const [columns, setColumns] = usePersistedState('simpleTripColumns', ['startTime', 'endTime', 'distance', 'duration']);
+  const filteredColumns = columns.filter((key) => validColumnKeys.has(key));
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -117,7 +113,7 @@ const TripReportPage = () => {
         sheets.set(deviceName, []);
       }
       const row = {};
-      columns.forEach((key) => {
+      filteredColumns.forEach((key) => {
         const header = t(columnsMap.get(key));
         if (key === 'startAddress') {
           row[header] = item.startAddress || '';
@@ -167,7 +163,7 @@ const TripReportPage = () => {
   };
 
   return (
-    <PageLayout menu={<ReportsMenu />} breadcrumbs={['reportTitle', 'reportTripsAll']}>
+    <PageLayout menu={<ReportsMenu />} breadcrumbs={['reportTitle', 'reportTrips']}>
       <div className={classes.container}>
         {selectedItem && (
           <div className={classes.containerMap}>
@@ -195,7 +191,7 @@ const TripReportPage = () => {
               <TableRow>
                 <TableCell className={classes.columnAction} />
                 <TableCell>{t('sharedDevice')}</TableCell>
-                {columns.map((key) => (<TableCell key={key}>{t(columnsMap.get(key))}</TableCell>))}
+                {filteredColumns.map((key) => (<TableCell key={key}>{t(columnsMap.get(key))}</TableCell>))}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -213,13 +209,13 @@ const TripReportPage = () => {
                     )}
                   </TableCell>
                   <TableCell>{devices[item.deviceId].name}</TableCell>
-                  {columns.map((key) => (
+                  {filteredColumns.map((key) => (
                     <TableCell key={key}>
                       {formatValue(item, key)}
                     </TableCell>
                   ))}
                 </TableRow>
-              )) : (<TableShimmer columns={columns.length + 2} startAction />)}
+              )) : (<TableShimmer columns={filteredColumns.length + 2} startAction />)}
             </TableBody>
           </Table>
         </div>
@@ -228,4 +224,4 @@ const TripReportPage = () => {
   );
 };
 
-export default TripReportPage;
+export default SimpleTripReportPage;

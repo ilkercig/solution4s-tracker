@@ -18,8 +18,9 @@ import PositionPage from './other/PositionPage';
 import NetworkPage from './other/NetworkPage';
 import EventReportPage from './reports/EventReportPage';
 import SimpleEventReportPage from './reports/SimpleEventReportPage';
-import ReplayPage from './other/ReplayPage';
 import TripReportPage from './reports/TripReportPage';
+import SimpleTripReportPage from './reports/SimpleTripReportPage';
+import ReplayPage from './other/ReplayPage';
 import StopReportPage from './reports/StopReportPage';
 import SummaryReportPage from './reports/SummaryReportPage';
 import ChartReportPage from './reports/ChartReportPage';
@@ -178,7 +179,8 @@ const Navigation = () => {
           <Route path="route" element={<PositionsReportPage />} />
           <Route path="stops" element={<StopReportPage />} />
           <Route path="summary" element={<SummaryReportPage />} />
-          <Route path="trips" element={<TripReportPage />} />
+          <Route path="trips" element={<SimpleTripReportPage />} />
+          <Route path="trips-all" element={<TripReportPage />} />
           <Route path="scheduled" element={<ScheduledPage />} />
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="audit" element={<AuditPage />} />

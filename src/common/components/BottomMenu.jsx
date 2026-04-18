@@ -13,7 +13,7 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 import { sessionActions } from '../../store';
 import { useTranslation } from './LocalizationProvider';
-import { useRestriction } from '../util/permissions';
+import { useManager, useRestriction } from '../util/permissions';
 import { nativePostMessage } from './NativeInterface';
 import apiFetch from '../util/apiFetch';
 
@@ -24,6 +24,7 @@ const BottomMenu = () => {
   const t = useTranslation();
 
   const readonly = useRestriction('readonly');
+  const manager = useManager();
   const disableReports = useRestriction('disableReports');
   const user = useSelector((state) => state.session.user);
   const socket = useSelector((state) => state.session.socket);
@@ -84,10 +85,10 @@ const BottomMenu = () => {
         navigate('/');
         break;
       case 'reports':
-        if (selectedDeviceId != null) {
-          navigate(`/reports/combined?deviceId=${selectedDeviceId}`);
+        if (manager) {
+          navigate(selectedDeviceId != null ? `/reports/combined?deviceId=${selectedDeviceId}` : '/reports/combined');
         } else {
-          navigate('/reports/combined');
+          navigate(selectedDeviceId != null ? `/reports/events?deviceId=${selectedDeviceId}` : '/reports/events');
         }
         break;
       case 'settings':
