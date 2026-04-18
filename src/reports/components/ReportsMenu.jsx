@@ -84,44 +84,54 @@ const ReportsMenu = () => {
             selected={location.pathname === '/reports/trips-all'}
           />
         )}
-        <MenuItem
-          title={t('reportStops')}
-          link={buildLink('/reports/stops')}
-          icon={<PauseCircleFilledIcon />}
-          selected={location.pathname === '/reports/stops'}
-        />
-        <MenuItem
-          title={t('reportSummary')}
-          link={buildLink('/reports/summary')}
-          icon={<FormatListBulletedIcon />}
-          selected={location.pathname === '/reports/summary'}
-        />
-        <MenuItem
-          title={t('reportChart')}
-          link={buildLink('/reports/chart')}
-          icon={<TrendingUpIcon />}
-          selected={location.pathname === '/reports/chart'}
-        />
+        {manager && (
+          <MenuItem
+            title={t('reportStops')}
+            link={buildLink('/reports/stops')}
+            icon={<PauseCircleFilledIcon />}
+            selected={location.pathname === '/reports/stops'}
+          />
+        )}
+        {manager && (
+          <MenuItem
+            title={t('reportSummary')}
+            link={buildLink('/reports/summary')}
+            icon={<FormatListBulletedIcon />}
+            selected={location.pathname === '/reports/summary'}
+          />
+        )}
+        {manager && (
+          <MenuItem
+            title={t('reportChart')}
+            link={buildLink('/reports/chart')}
+            icon={<TrendingUpIcon />}
+            selected={location.pathname === '/reports/chart'}
+          />
+        )}
         <MenuItem
           title={t('reportReplay')}
           link="/replay"
           icon={<RouteIcon />}
         />
-        <MenuItem
-          title={t('reportPositions')}
-          link={buildLink('/reports/route')}
-          icon={<TimelineIcon />}
-          selected={location.pathname === '/reports/route'}
-        />
+        {manager && (
+          <MenuItem
+            title={t('reportPositions')}
+            link={buildLink('/reports/route')}
+            icon={<TimelineIcon />}
+            selected={location.pathname === '/reports/route'}
+          />
+        )}
       </List>
       <Divider />
       <List>
-        <MenuItem
-          title={t('sharedLogs')}
-          link="/reports/logs"
-          icon={<NotesIcon />}
-          selected={location.pathname === '/reports/logs'}
-        />
+        {manager && (
+          <MenuItem
+            title={t('sharedLogs')}
+            link="/reports/logs"
+            icon={<NotesIcon />}
+            selected={location.pathname === '/reports/logs'}
+          />
+        )}
         {!readonly && (
           <MenuItem
             title={t('reportScheduled')}

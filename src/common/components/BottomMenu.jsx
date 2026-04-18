@@ -13,7 +13,7 @@ import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 import { sessionActions } from '../../store';
 import { useTranslation } from './LocalizationProvider';
-import { useManager, useRestriction } from '../util/permissions';
+import { useDeviceReadonly, useManager, useRestriction } from '../util/permissions';
 import { nativePostMessage } from './NativeInterface';
 import apiFetch from '../util/apiFetch';
 
@@ -24,6 +24,7 @@ const BottomMenu = () => {
   const t = useTranslation();
 
   const readonly = useRestriction('readonly');
+  const deviceReadonly = useDeviceReadonly();
   const manager = useManager();
   const disableReports = useRestriction('disableReports');
   const user = useSelector((state) => state.session.user);
@@ -92,7 +93,11 @@ const BottomMenu = () => {
         }
         break;
       case 'settings':
-        navigate('/settings/preferences?menu=true');
+        if (deviceReadonly) {
+          navigate('/settings/devices?menu=true');
+        } else {
+          navigate('/settings/preferences?menu=true');
+        }
         break;
       case 'account':
         setAnchorEl(event.currentTarget);
@@ -120,8 +125,8 @@ const BottomMenu = () => {
         {!disableReports && (
           <BottomNavigationAction label={t('reportTitle')} icon={<DescriptionIcon />} value="reports" />
         )}
-        <BottomNavigationAction label={t('settingsTitle')} icon={<SettingsIcon />} value="settings" />
-        {readonly ? (
+        {!readonly && <BottomNavigationAction label={t('settingsTitle')} icon={<SettingsIcon />} value="settings" />}
+        {(readonly || deviceReadonly) ? (
           <BottomNavigationAction label={t('loginLogout')} icon={<ExitToAppIcon />} value="logout" />
         ) : (
           <BottomNavigationAction label={t('settingsUser')} icon={<PersonIcon />} value="account" />

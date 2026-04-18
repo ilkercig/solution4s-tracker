@@ -20,7 +20,7 @@ import { useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useTranslation } from '../../common/components/LocalizationProvider';
 import {
-  useAdministrator, useManager, useRestriction,
+  useAdministrator, useDeviceReadonly, useManager, useRestriction,
 } from '../../common/util/permissions';
 import useFeatures from '../../common/util/useFeatures';
 import MenuItem from '../../common/components/MenuItem';
@@ -30,6 +30,7 @@ const SettingsMenu = () => {
   const location = useLocation();
 
   const readonly = useRestriction('readonly');
+  const deviceReadonly = useDeviceReadonly();
   const admin = useAdministrator();
   const manager = useManager();
   const userId = useSelector((state) => state.session.user.id);
@@ -41,13 +42,15 @@ const SettingsMenu = () => {
   return (
     <>
       <List>
-        <MenuItem
-          title={t('sharedPreferences')}
-          link="/settings/preferences"
-          icon={<TuneIcon />}
-          selected={location.pathname === '/settings/preferences'}
-        />
-        {!readonly && (
+        {!readonly && !deviceReadonly && (
+          <MenuItem
+            title={t('sharedPreferences')}
+            link="/settings/preferences"
+            icon={<TuneIcon />}
+            selected={location.pathname === '/settings/preferences'}
+          />
+        )}
+        {!readonly && !deviceReadonly && (
           <>
             <MenuItem
               title={t('sharedNotifications')}
@@ -61,6 +64,10 @@ const SettingsMenu = () => {
               icon={<PersonIcon />}
               selected={location.pathname === `/settings/user/${userId}`}
             />
+          </>
+        )}
+        {!readonly && (
+          <>
             <MenuItem
               title={t('deviceTitle')}
               link="/settings/devices"
@@ -73,6 +80,10 @@ const SettingsMenu = () => {
               icon={<DrawIcon />}
               selected={location.pathname.startsWith('/settings/geofence')}
             />
+          </>
+        )}
+        {!readonly && !deviceReadonly && (
+          <>
             {!features.disableGroups && (
               <MenuItem
                 title={t('settingsGroups')}
@@ -81,14 +92,18 @@ const SettingsMenu = () => {
                 selected={location.pathname.startsWith('/settings/group')}
               />
             )}
-            {!features.disableDrivers && (
-              <MenuItem
-                title={t('sharedDrivers')}
-                link="/settings/drivers"
-                icon={<PersonIcon />}
-                selected={location.pathname.startsWith('/settings/driver')}
-              />
-            )}
+          </>
+        )}
+        {!readonly && !features.disableDrivers && (
+          <MenuItem
+            title={t('sharedDrivers')}
+            link="/settings/drivers"
+            icon={<PersonIcon />}
+            selected={location.pathname.startsWith('/settings/driver')}
+          />
+        )}
+        {!readonly && !deviceReadonly && (
+          <>
             {!features.disableCalendars && (
               <MenuItem
                 title={t('sharedCalendars')}
