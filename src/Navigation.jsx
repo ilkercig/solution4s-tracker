@@ -64,6 +64,7 @@ import { useLocalization } from './common/components/LocalizationProvider';
 import fetchOrThrow from './common/util/fetchOrThrow';
 import apiFetch from './common/util/apiFetch';
 import AuditPage from './reports/AuditPage';
+import DeviceConfigurationPage from './settings/DeviceConfigurationPage';
 
 const Navigation = () => {
   const dispatch = useDispatch();
@@ -141,6 +142,7 @@ const Navigation = () => {
           <Route path="attributes" element={<ComputedAttributesPage />} />
           <Route path="attribute/:id" element={<ComputedAttributePage />} />
           <Route path="attribute" element={<ComputedAttributePage />} />
+          <Route path="device-configuration" element={<DeviceConfigurationPage />} />
           <Route path="devices" element={<DevicesPage />} />
           <Route path="device/:id/connections" element={<DeviceConnectionsPage />} />
           <Route path="device/:id/command" element={<CommandDevicePage />} />

@@ -1,6 +1,7 @@
 import {
   Divider, List,
 } from '@mui/material';
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import TuneIcon from '@mui/icons-material/Tune';
 import DrawIcon from '@mui/icons-material/Draw';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -69,10 +70,16 @@ const SettingsMenu = () => {
         {!readonly && (
           <>
             <MenuItem
+              title={t('settingsDeviceConfiguration')}
+              link="/settings/device-configuration"
+              icon={<BuildCircleIcon />}
+              selected={location.pathname === '/settings/device-configuration'}
+            />
+            <MenuItem
               title={t('deviceTitle')}
               link="/settings/devices"
               icon={<DnsIcon />}
-              selected={location.pathname.startsWith('/settings/device')}
+              selected={location.pathname.startsWith('/settings/device') && !location.pathname.startsWith('/settings/device-configuration')}
             />
             <MenuItem
               title={t('sharedGeofences')}
